@@ -4,7 +4,6 @@ import pandas as pd
 
 from datetime import datetime as dt
 
-OUTPUTS_PATH = os.path.join(os.path.dirname(__file__), '..', 'outputs')
 UTILS_PATH = os.path.join(os.path.dirname(__file__), '..', 'utils')
 sys.path.append(UTILS_PATH)
 
@@ -50,7 +49,14 @@ def get_df_final(df_ipv4, df_hostname, df_fqdn, df_mac, df_owner, df_dt, df_raw,
     
     return df_final
 
-def main(df_raw: pd.DataFrame):
+def transform_inventory(csv_path: str):
+    if csv_path is None or csv_path == "":
+        raise ValueError("Missing inventory_raw.csv as arg")
+    try:
+        df_raw = pd.read_csv(csv_path)
+    except ValueError as e:
+        raise e
+    
     it = InventoryTransformations()
 
     # IP TRANSFORMATIONS
@@ -140,19 +146,9 @@ def main(df_raw: pd.DataFrame):
     df_final = get_df_final(df_ipv4, df_hostname, df_fqdn, df_mac, df_owner, df_dt, df_raw, df_site, df_normalization_steps)
     print(df_final.columns)
 
-    df_final.to_csv(os.path.join(OUTPUTS_PATH, f'{dt.today().year}-{dt.today().day}-{dt.today().month}_inventory_clean.csv'))
+    OUTPUTS_PATH = os.path.join(os.path.dirname(__file__), '..', 'tmp', '01-ingest-and-transform-inventory')
+    csv_path = os.path.join(OUTPUTS_PATH, f'{dt.today().year}-{dt.today().day}-{dt.today().month}_inventory_tmp.csv')
 
-    return
+    df_final.to_csv(csv_path)
 
-
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        raise ValueError("Missing inventory_raw.csv as arg")
-    try:
-        df_raw = pd.read_csv(sys.argv[1])
-    except ValueError as e:
-        raise e
-    
-    main(df_raw)
+    return csv_path

@@ -3,25 +3,15 @@ from airflow import DAG
 from airflow.decorators import task
 
 import pandas as pd
+import sys
 import os
 
-# ------------------------------------------------------------------
-# This would normally live in a separate module you import.
-# I'm inlining it here so it's easy to see the flow.
-# ------------------------------------------------------------------
+SRC_PATH = os.path.join(os.path.dirname(__file__), '..', 'src')
+print(SRC_PATH)
 
-def transform_inventory():
-    """
-    Do all your pandas munging here and return the cleaned dataframe.
-    """
-    # EXAMPLE ONLY: replace this with your real logic
-    df_raw = pd.read_csv("/opt/airflow/data/inventory_raw.csv")
+sys.path.append(SRC_PATH)
 
-    # ... your cleaning steps ...
-    df_clean = df_raw.copy()  # placeholder for your real transforms
-
-    return df_clean
-
+from clean_inventory import transform_inventory
 
 # ------------------------------------------------------------------
 # DAG definition
@@ -40,44 +30,32 @@ with DAG(
 ) as dag:
 
     @task()
-    def clean_inventory(execution_date=None):
+    def ingest_and_transform_inventory(execution_date=None):
         """
         Run the transform, save {date}_inventory_clean.csv,
         and return (push via XCom) the file path.
         """
         # Use Airflow's logical date for deterministic naming
         run_date_str = execution_date.strftime("%Y-%m-%d")
+        # inventory_raw.csv path 
+        INPUT_PATH = os.path.join(os.path.dirname(__file__), '..', 'inputs', 'inventory_raw.csv')
 
-        df_clean = transform_inventory()
-
-        output_dir = "/opt/airflow/data/clean"
-        os.makedirs(output_dir, exist_ok=True)
-
-        output_path = os.path.join(
-            output_dir,
-            f"{run_date_str}_inventory_clean.csv"
-        )
-
-        df_clean.to_csv(output_path, index=False)
-
-        # Whatever this function returns becomes an XCom that
-        # the next task can pull.
+        output_path = transform_inventory(INPUT_PATH)
+        
         return output_path
 
     @task()
-    def consume_inventory(clean_file_path: str):
+    def load_inventory(clean_file_path: str):
         """
         Example downstream task.
         You now know exactly which file to read.
         """
         df_clean = pd.read_csv(clean_file_path)
+        OUTPUT_PATH=os.path.join(os.path.dirname(__file__), '..', 'outputs', f'{clean_file_path.split('/')[-1].split('_')[0]}_inventory_clean.csv')
+        df_clean.to_csv(OUTPUT_PATH)
 
-        # Do the next thing:
-        # - quality checks
-        # - load to warehouse
-        # - create summary, etc.
         print(f"Rows in clean inventory: {len(df_clean)}")
 
     # wiring
-    cleaned_path = clean_inventory()
-    consume_inventory(cleaned_path)
+    cleaned_path = ingest_and_transform_inventory()
+    load_inventory(cleaned_path)
