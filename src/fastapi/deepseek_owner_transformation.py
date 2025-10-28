@@ -29,7 +29,7 @@ def main(df_path: str):
     with open(SECRETS_PATH, 'r') as file:
         secrets = json.load(file)
 
-    df_tmp = pd.read_csv(df_path)
+    df_tmp = pd.read_csv(df_path, index_col=0)
     df_owner = pd.DataFrame()
     df_owner[['owner', 'owner_team', 'owner_email']] = df_tmp[['owner', 'owner_team', 'owner_email']]
     json_owner = df_owner.to_json()
