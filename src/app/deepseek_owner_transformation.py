@@ -84,7 +84,8 @@ def call_llm(df_owner: str, secrets_path: str):
         response_format={
             "type": "json_object"
         },
-        stream=False
+        stream=False,
+        temperature=0.2
     )
 
     response_json = json.loads(response.choices[0].message.content)
@@ -135,12 +136,13 @@ def run_owner_normalization(df_path: str) -> dict:
     # merge high-confidence rows back into df_tmp and save CSV
     OUTPUT_CSV_PATH = os.path.join(TMP_PATH, f"{CURR_DATE}_inventory_tmp.csv")
     updated_df = transform_and_save_df(RESPONSE_PATH, df_tmp=df_tmp, save_path=OUTPUT_CSV_PATH)
+    df_preview = updated_df.head(20).replace({float('nan'): None})
 
     return {
         "updated_csv_path": OUTPUT_CSV_PATH,
         "llm_json_path": RESPONSE_PATH,
         "llm_json": response_json,
-        "updated_df_preview": updated_df.head(20).to_dict(orient="index"),
+        "updated_df_preview": df_preview.to_dict(orient='index'),
     }
 
 def main(df_path):

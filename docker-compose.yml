@@ -1,4 +1,14 @@
 services:
+  # Deepseek-powered FastAPI server for transforming owner class
+  transformation-server:
+    build: src/
+    ports:
+      - 8000:8000
+    container_name: transformation-server
+    volumes:
+      - ./src/app:/opt/src/app
+      - ./tmp:/opt/tmp
+
   postgres:
     image: postgres:15
     container_name: airflow_postgres
