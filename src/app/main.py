@@ -9,16 +9,57 @@ CURR_PATH=os.path.join(os.path.dirname(__file__))
 sys.path.append(CURR_PATH)
 
 from deepseek_owner_transformation import run_owner_normalization
+from deepseek_anomaly_detector import run_anomaly_detector
 
 app = FastAPI(
-    title="Owner Normalization Service",
-    description="Takes an inventory CSV, asks an LLM to clean owner fields, applies high-confidence fixes (>=70%), returns updated data.",
+    title="Owner Normalization, and Anomaly Detection Service",
+    description="Takes an inventory CSV, asks an LLM to clean owner fields, applies high-confidence fixes (>=70%), returns updated data. Alternatively, takes a CSV asks an LLM to report anomalies in a .json format.",
     version="1.0.0"
 )
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/detect-anomalies")
+async def detect_anomalies(file: UploadFile = File(...)):
+    """
+    Send a CSV with columns ['source_row_id', 'ip', 'ip_valid', 'ip_type', 'subnet_cidr', 'hostname', 'hostname_valid', 'fqdn', 'reverse_ptr', 'mac', 'mac_valid', 'device_type', 'site-normalized'].
+    We'll:
+      1. run the LLM
+      2. Detect anomalies
+      3. give you:
+         - anomaly_response_path:     path to json file containing anomaly observations
+         - llm_json:  json containing anomaly observations
+    """
+    # sanity check: must be CSV-ish
+    filename_lower = file.filename.lower()
+    if not (filename_lower.endswith(".csv")):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file.")
+
+    # write upload to a temp file on disk so pandas can read it
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
+            tmp_path = tmp.name
+            contents = await file.read()
+            tmp.write(contents)
+
+        # run your full pipeline
+        result = run_anomaly_detector(tmp_path)
+
+        # else: return JSON summary only
+        return JSONResponse(
+            content={
+                "anomaly_response_path": result["anomaly_response_path"],
+                "llm_json": result["llm_json"],
+            }
+        )
+
+    finally:
+        # cleanup temp upload
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 
 @app.post("/process-file")

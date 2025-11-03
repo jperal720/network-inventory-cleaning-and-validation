@@ -91,15 +91,6 @@ def call_llm(df_owner: str, secrets_path: str):
     response_json = json.loads(response.choices[0].message.content)
 
     return response_json
-    # CURR_DATE = f"{dt.today().year}-{dt.today().day}-{dt.today().month}"
-
-    # TMP_PATH = os.path.join(os.path.dirname(__file__), '..', '..', 'tmp', '02-llm-owner-transform')
-    # RESPONSE_PATH = f'{TMP_PATH}/json_response/{CURR_DATE}_response.json'
-
-    # with open(RESPONSE_PATH, 'w') as file:
-    #     json.dump(response_json, file)
-
-    # transform_and_save_df(RESPONSE_PATH, df_tmp=df_tmp, save_path=os.path.join(TMP_PATH, f"{CURR_DATE}_inventory_tmp.csv"))
 
 
 def run_owner_normalization(df_path: str) -> dict:
