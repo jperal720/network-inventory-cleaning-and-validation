@@ -28,10 +28,10 @@ Our pipeline is divided into four tasks and are all executed one after the other
 
 Description of tasks:
 
-- ingest_and_transform_inventory: Ingests the *raw_inventory.csv* and applies deterministic transformations –e.g. validate ip, mac, etc– whose logic can be found in *src/clean_inventory.py*. The results are exported to *tmp/01-ingest-and-transform-inventory/{date_of_execution}_inventory_tmp.csv*.
-- llm_transform_owner: Transforms the ambiguous cases of the owner classes –owner, owner_team, and owner_email– using our deepseek-api-powered fastapi server. The results are first exported in a .json format in *tmp/02-llm-owner-transform/json_response/{date_of_execution}_response.json*, then they are set inside of our .csv, which is similarly found in *tmp/02-llm-owner-trasnform/{date_of_execution}_inventory_tmp.csv*.
-- detect_anomalies: Uses our deepseek-api-powered server to determine which observations are anomalies. The results can be found in *outputs/{date_of_exectution}/anomalies.json*.
-- load_inventory: Exports the final clean inventory to *outputs/{date_of_execution}/clean_inventory.csv*.
+- ```ingest_and_transform_inventory```: Ingests the *raw_inventory.csv* and applies deterministic transformations –e.g. validate ip, mac, etc– whose logic can be found in *src/clean_inventory.py*. The results are exported to *tmp/01-ingest-and-transform-inventory/{date_of_execution}_inventory_tmp.csv*.
+- ```llm_transform_owner```: Transforms the ambiguous cases of the owner classes –owner, owner_team, and owner_email– using our deepseek-api-powered fastapi server. The results are first exported in a .json format in *tmp/02-llm-owner-transform/json_response/{date_of_execution}_response.json*, then they are set inside of our .csv, which is similarly found in *tmp/02-llm-owner-trasnform/{date_of_execution}_inventory_tmp.csv*.
+- ```detect_anomalies```: Uses our deepseek-api-powered server to determine which observations are anomalies. The results can be found in *outputs/{date_of_exectution}/anomalies.json*.
+- ```load_inventory```: Exports the final clean inventory to *outputs/{date_of_execution}/clean_inventory.csv*.
 
 # Prompts
 
