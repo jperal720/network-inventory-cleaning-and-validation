@@ -244,4 +244,4 @@ __marimo__/
 logs/*
 
 # REMOVE THIS FOR A DAY
-secrets.json
+# secrets.json
