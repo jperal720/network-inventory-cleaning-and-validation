@@ -75,8 +75,7 @@ Description of tasks:
     ```
 
 - For detecting anomalies:
-  - ```
-  I want you to exclusively look at each observation in the attached .json file" .
+  - ```I want you to exclusively look at each observation in the attached .json file".
   Return to me which rows you think are anomalies; return your results in a .json file.
 
   In the .json file that you return each row of interest should have the following classes: source_row_id (this is determined by the source_row_id class of each observation), affected_fields (these are determined by which classes you think make that specific observation an anomaly), issue_type (what you think is the issue with respects to each affected_field), recommended_action (this should be a binary value, either "modify" or "drop"), and anomaly_confidence (from 0 to 100 how sure you are that the observation is an anomaly) 
