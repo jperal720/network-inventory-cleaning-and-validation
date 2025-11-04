@@ -242,3 +242,6 @@ __marimo__/
 
 # airflow
 logs/*
+
+# REMOVE THIS FOR A DAY
+secrets.json

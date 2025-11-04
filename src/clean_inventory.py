@@ -147,6 +147,7 @@ def transform_inventory(csv_path: str):
     print(df_final.columns)
 
     OUTPUTS_PATH = os.path.join(os.path.dirname(__file__), '..', 'tmp', '01-ingest-and-transform-inventory')
+    os.makedirs(OUTPUTS_PATH, exist_ok=True)
     csv_path = os.path.join(OUTPUTS_PATH, f'{dt.today().year}-{dt.today().day}-{dt.today().month}_inventory_tmp.csv')
 
     df_final.to_csv(csv_path)

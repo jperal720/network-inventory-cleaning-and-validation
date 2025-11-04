@@ -1,0 +1,16 @@
+FROM python:3.13.3-alpine
+USER root
+WORKDIR /opt/.
+
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers
+
+COPY ./secrets.json ./secrets.json
+COPY ./requirements.txt ./requirements.txt
+
+RUN pip3 install -r ./requirements.txt
+
+ENTRYPOINT uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --reload
