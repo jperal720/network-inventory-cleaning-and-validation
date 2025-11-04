@@ -36,46 +36,68 @@ Description of tasks:
 # Prompts
 
 - System prompt:
-
-  - ```You are a helpful assistant. Do not answer with more words than you need;
-      when a user asks you something you do it as exact as possible.```
+```
+You are a helpful assistant. Do not answer with more words than you need;
+when a user asks you something you do it as exact as possible.
+```
 
 - For ambiguous owner transformations:
-  - ``` I want you to exclusively look at the owner, owner_team, and owner_email per each observation in the attached .json file". Return to me how you think they should be parsed, regardless of whether you agree with the original parsing or not, and return your parsing in a .json file. That is, if you think the owner value in an observation should be swapped with the value in owner_team, swap them. 
+```
+I want you to exclusively look at the owner, owner_team, and owner_email per each observation in the attached .json file". Return to me how you think they should be parsed, regardless of whether you agree with the original parsing or not, and return your parsing in a .json file. That is, if you think the owner value in an observation should be swapped with the value in owner_team, swap them. 
   
-  Consider taking into account that the name of teams (ops, platform, facilities, etc.) should be in the owner_team column, and only peoples' names should be in the owner column.
+Consider taking into account that the name of teams (ops, platform, facilities, etc.) should be in the owner_team column, and only peoples' names should be in the owner column.
   
-  Additionally, include a new column of your confidence_percentage (from 0 to 100%) that these changes are correct. I only would like the .json from you (no need to explain your reasoning).
+Additionally, include a new column of your confidence_percentage (from 0 to 100%) that these changes are correct. I only would like the .json from you (no need to explain your reasoning).
   
-  If you think that an observation doesn't require any changing, that's fine, too.
+If you think that an observation doesn't require any changing, that's fine, too.
   
-  Note: If you think a value is null, just put null; don't change the format.
+Note: If you think a value is null, just put null; don't change the format.
 
-  EXAMPLE JSON OUTPUT: {
-      "owner": {
-          "0": "juan",
-          ...,
-          "10": null,
-          ...
-      },
-      "owner_team": {
-          "0": "marketing",
-          ...,
-          "14": null
-      },
-      "owner_email":{
-          "0": "juan@example.com"
-          ...
-      },
-      "confidence_percentage":{
-          "0": 75,
-          ...
-      }
-  }
-    ```
+EXAMPLE JSON OUTPUT: {
+    "owner": {
+        "0": "juan",
+        ...,
+        "10": null,
+        ...
+    },
+    "owner_team": {
+        "0": "marketing",
+        ...,
+        "14": null
+    },
+    "owner_email":{
+        "0": "juan@example.com"
+        ...
+    },
+    "confidence_percentage":{
+        "0": 75,
+        ...
+    }
+}
+```
 
 - For detecting anomalies:
-  - ```I want you to exclusively look at each observation in the attached .json file".  Return to me which rows you think are anomalies; return your results in a .json file.  In the .json file that you return each row of interest should have the following classes: source_row_id (this is determined by the source_row_id class of each observation), affected_fields (these are determined by which classes you think make that specific observation an anomaly), issue_type (what you think is the issue with respects to each affected_field), recommended_action (this should be a binary value, either "modify" or "drop"), and anomaly_confidence (from 0 to 100 how sure you are that the observation is an anomaly)   EXAMPLE JSON OUTPUT: {  "source_row_id": 0,  "affected_fields": [ip_valid, mac_valid, reverse_ptr, fqdn, device_type],  "issue_type": "ip is invalid, mac is invalid, reverse_ptr does not exist, fqdn does not exist, and device_type is not listed. The combination of all of these make this an anomaly.",  "recommended_action": "drop",  "anomaly_confidence": 75  },   ...,  {  "source_row_id": 10,  ...,  "recommended_action": "modify",  "anomaly_confidence": 100  }```
+```
+I want you to exclusively look at each observation in the attached .json file" .
+Return to me which rows you think are anomalies; return your results in a .json file.
+
+In the .json file that you return each row of interest should have the following classes: source_row_id (this is determined by the source_row_id class of each observation), affected_fields (these are determined by which classes you think make that specific observation an anomaly), issue_type (what you think is the issue with respects to each affected_field), recommended_action (this should be a binary value, either "modify" or "drop"), and anomaly_confidence (from 0 to 100 how sure you are that the observation is an anomaly) 
+
+EXAMPLE JSON OUTPUT: {
+    "source_row_id": 0,
+    "affected_fields": [ip_valid, mac_valid, reverse_ptr, fqdn, device_type],
+    "issue_type": "ip is invalid, mac is invalid, reverse_ptr does not exist, fqdn does not exist, and device_type is not listed. The combination of all of these make this an anomaly.",
+    "recommended_action": "drop",
+    "anomaly_confidence": 75
+}, 
+...,
+{
+    "source_row_id": 10,
+    ...,
+    "recommended_action": "modify",
+    "anomaly_confidence": 100
+}
+```
 
 
 
