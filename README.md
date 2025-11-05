@@ -18,6 +18,9 @@ The purpose of this containerized-DAG-oriented pipeline is to cleanse and valida
 
 - Once all the containers have started, execute the *inventory_pipeline* DAG found in ```localhost:8080```
 
+  - username: admin
+  - password: admin
+
 - The results should be found in the directory *output/{date_of_execution}*
 
 # Approach
