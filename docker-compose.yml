@@ -1,4 +1,19 @@
 services:
+  # Spark master
+  spark-master:
+    build: spark/
+    ports:
+      - 7077:7077
+      - 7070:7070
+    container_name: spark-master
+    environment:
+      SPARK_MASTER_HOST: 0.0.0.0
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 7070
+      SPARK_DAEMON_MEMORY: 200M
+      SPARK_NO_DAEMONIZE: 1
+
+
   # Deepseek-powered FastAPI server for transforming owner class
   transformation-server:
     build: src/
