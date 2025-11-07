@@ -1,4 +1,4 @@
 FROM apache/spark-py
 USER root
 WORKDIR $SPARK_HOME
-ENTRYPOINT sbin/start-master.sh 
+ENTRYPOINT sbin/start-worker.sh $SPARK_MASTER_URL

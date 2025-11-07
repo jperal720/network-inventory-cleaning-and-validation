@@ -13,6 +13,17 @@ services:
       SPARK_DAEMON_MEMORY: 200M
       SPARK_NO_DAEMONIZE: 1
 
+  # Spark worker
+  spark-worker-1:
+    build: spark/spark-worker
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_NO_DAEMONIZE: 1
+
 
   # Deepseek-powered FastAPI server for transforming owner class
   transformation-server:
