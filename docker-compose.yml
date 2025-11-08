@@ -1,4 +1,33 @@
 services:
+  # minIO
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio-data:/data
+
+  minio-mc:
+    image: minio/mc:latest
+    container_name: minio-mc
+    depends_on: [minio]
+    entrypoint: >
+      /bin/sh -c "
+        sleep 2;
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb -p local/inventory || true;
+        mc cp /seed/inventory_raw.csv local/inventory/inventory_raw.csv;
+        exit 0
+      "
+    volumes:
+      - ./inputs:/seed:ro
+
   # Spark master
   spark-master:
     build: spark/
@@ -7,11 +36,16 @@ services:
       - 7070:7070
     container_name: spark-master
     environment:
-      SPARK_MASTER_HOST: 0.0.0.0
+      SPARK_MASTER_HOST: spark-master
       SPARK_MASTER_PORT: 7077
       SPARK_MASTER_WEBUI_PORT: 7070
       SPARK_DAEMON_MEMORY: 200M
       SPARK_NO_DAEMONIZE: 1
+    volumes:
+      - ./inputs:/data:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
 
   # Spark worker
   spark-worker-1:
@@ -23,6 +57,10 @@ services:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
       SPARK_NO_DAEMONIZE: 1
+    volumes:
+      - ./inputs:/data:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 
   # Deepseek-powered FastAPI server for transforming owner class
@@ -160,3 +198,4 @@ services:
 
 volumes:
   postgres_data:
+  minio-data:
