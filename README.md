@@ -10,7 +10,7 @@ The purpose of this containerized-DAG-oriented pipeline is to cleanse and valida
 
 ## To Run Pipeline
 
-WARNING: Please ensure that you use ```python3.10``` when installing dependencies to avoid discrepancies with pyspark. a
+WARNING: Please ensure that you use ```python3.10``` when installing dependencies to avoid discrepancies with pyspark.
 
 - Clone repository.
 
