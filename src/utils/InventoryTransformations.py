@@ -1,6 +1,4 @@
 import re
-import pandas as pd
-import numpy as np
 import ipaddress
 
 from urllib.parse import urlparse
@@ -22,7 +20,7 @@ class InventoryTransformations:
         FIELD="ip"
         FROM=ip_str
 
-        if pd.isna(ip_str):
+        if ip_str is None:
             final_ip = None
             return (False, final_ip, self.traceability_metadata(FIELD, FROM, final_ip, "missing"))
         s = str(ip_str).strip()
@@ -57,7 +55,7 @@ class InventoryTransformations:
         return (True, canonical, self.traceability_metadata(FIELD, FROM, canonical, "ok"))
 
     def classify_ipv4_type(self, ip):
-        if pd.isna(ip) or ip is None:
+        if ip is None:
             return "invalid"
         
         try:
@@ -82,7 +80,7 @@ class InventoryTransformations:
             return "invalid_format"
         
     def default_subnet(self, ip, ip_type=None):
-        if pd.isna(ip) or ip is None:
+        if ip is None:
             return ""
         
         try:
@@ -122,7 +120,7 @@ class InventoryTransformations:
         FIELD='hostname'
         FROM=hostname_str
 
-        if pd.isna(hostname_str):
+        if hostname_str is None:
             final_hostname = None
             return (False, None, self.traceability_metadata(FIELD, FROM, final_hostname, "missing"))
         
@@ -169,7 +167,7 @@ class InventoryTransformations:
         FROM=site
 
         final_site = 'unknown'
-        if pd.isna(site) or site is None:
+        if site is None:
             return (final_site, self.traceability_metadata(FIELD, FROM, final_site, "missing"))
         
         s = str(site).strip().lower()
@@ -203,7 +201,7 @@ class InventoryTransformations:
         FROM=fqdn_str
 
         final_fqdn = None
-        if pd.isna(fqdn_str) or fqdn_str is None:
+        if fqdn_str is None:
             return (False, final_fqdn, self.traceability_metadata(FIELD, FROM, final_fqdn, "missing"), "inconsistent")
         
         s = str(fqdn_str).strip()
@@ -271,7 +269,7 @@ class InventoryTransformations:
 
 
     def generate_reverse_ptr(self, ip):
-        if pd.isna(ip) or ip is None:
+        if ip is None:
             return None
 
         s_ip = str(ip).strip()
@@ -302,7 +300,7 @@ class InventoryTransformations:
         FROM=mac_str
         
         final_mac = None
-        if pd.isna(mac_str) or mac_str is None:
+        if mac_str is None:
             return (False, final_mac, self.traceability_metadata(FIELD, FROM, final_mac, "missing"))
         
         s = str(mac_str).strip()
@@ -340,7 +338,7 @@ class InventoryTransformations:
         FROM=owner_str
 
         final_owner=None
-        if pd.isna(owner_str) or not str(owner_str).strip():
+        if owner_str is None or not str(owner_str).strip():
             return (None, None, None, self.traceability_metadata(FIELD, FROM, final_owner, "missing"))
         
         s = str(owner_str).strip()
@@ -420,7 +418,7 @@ class InventoryTransformations:
         ]
 
         # --- Clean input ---
-        if pd.isna(device_type) or device_type is None:
+        if device_type is None:
             return ("unknown", 0 , self.traceability_metadata(FIELD, FROM, final_device_type, "missing"))
 
         s = str(device_type).strip().lower()

@@ -69,7 +69,7 @@ def transform_inventory(csv_path: str):
     )
     df_ipv4['subnet_cidr'] = df_ipv4.apply(
         lambda x: it.default_subnet(x['ip_canonical'], x['ip_type'])
-        if x['ip_valid'] else "",
+        if x['ip_valid'] else None,
         axis=1
     )
 

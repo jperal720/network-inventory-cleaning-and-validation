@@ -30,7 +30,7 @@ services:
 
   # Spark master
   spark-master:
-    build: spark/
+    build: spark/master
     ports:
       - 7077:7077
       - 7070:7070
@@ -43,6 +43,7 @@ services:
       SPARK_NO_DAEMONIZE: 1
     volumes:
       - ./inputs:/data:ro
+      - ./src/utils:/opt/utils
     extra_hosts:
       - "host.docker.internal:host-gateway"
     
@@ -59,8 +60,13 @@ services:
       SPARK_NO_DAEMONIZE: 1
     volumes:
       - ./inputs:/data:ro
+      - ./src/utils:/opt/utils
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+
+# TODO: CREATE SPARK DRIVER SERVICE
+
 
 
   # Deepseek-powered FastAPI server for transforming owner class
