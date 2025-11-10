@@ -2,7 +2,7 @@
 
 ## Description
 
-The purpose of this containerized-DAG-oriented pipeline is to cleanse and validate the observations stored in the inventory_raw.csv provided, solve its ambiguous cases and detect its anomalies –via an deepseek-api-powered FastAPI server– and export the results as inventory_clean.csv.
+The purpose of this containerized pipeline is to cleanse and validate the observations stored in the inventory_raw.csv provided, solve its ambiguous cases and detect its anomalies –via a deepseek-api-powered FastAPI server– and export the results as inventory_clean.csv.
 
 ## Architecture Visualized
 
