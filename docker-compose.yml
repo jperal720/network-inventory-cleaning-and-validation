@@ -65,9 +65,6 @@ services:
       - "host.docker.internal:host-gateway"
 
 
-# TODO: CREATE SPARK DRIVER SERVICE
-
-
 
   # Deepseek-powered FastAPI server for transforming owner class
   transformation-server:
@@ -94,15 +91,31 @@ services:
       retries: 5
     restart: unless-stopped
 
+  x-airflow-common: &airflow-common
+    build: ./dags
+    volumes:
+      - ./src:/opt/airflow/src
+
   airflow-init:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: airflow_init
     depends_on:
       postgres:
         condition: service_healthy
     entrypoint: /bin/bash
     command: >
-      -c "airflow db init && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+      -c "airflow db init && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com && airflow connections delete spark_connection || true && airflow connections add spark_connection --conn-type spark --conn-host spark-master --conn-port 7077"
+    # --conn-json '{
+    #   \"conn_type\": \"spark\",
+    #   \"host\": \"spark-master\",
+    #   \"port\": 7077,
+    #   \"extra\": {
+    #     \"deploy-mode\": \"cluster\",
+    #     \"spark-home\": \"/opt/spark\",
+    #     \"spark-binary\": \"spark-submit\"
+    #   }
+    # }'"
+      
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
@@ -118,7 +131,7 @@ services:
       - ./outputs:/opt/airflow/outputs
 
   airflow-scheduler:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: airflow_scheduler
     depends_on:
       postgres:
@@ -144,7 +157,7 @@ services:
       - ./outputs:/opt/airflow/outputs
 
   airflow-webserver:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: airflow_webserver
     depends_on:
       postgres:
@@ -177,7 +190,7 @@ services:
       retries: 5
 
   airflow-triggerer:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: airflow_triggerer
     depends_on:
       postgres:
