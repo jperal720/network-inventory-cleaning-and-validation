@@ -1,7 +1,6 @@
 import os
 import sys
-import shutil
-import subprocess
+import argparse
 from datetime import datetime as dt
 
 from pyspark.sql import SparkSession
@@ -11,12 +10,12 @@ from pyspark.sql import types as T
 UTILS_PATH = os.path.join(os.path.dirname(__file__), '..', 'src', 'utils')
 sys.path.append(UTILS_PATH)
 
-DRIVER_HOST = "host.docker.internal"
+DRIVER_HOST = "airflow-scheduler"
 DRIVER_PORT = "4042"
 BLOCK_MANAGER_PORT = "4043"
 
-AWS_BUNDLE = "com.amazonaws:aws-java-sdk-bundle:1.12.262"
-HADOOP_AWS = "org.apache.hadoop:hadoop-aws:3.3.4"
+AWS_BUNDLE = "software.amazon.awssdk:bundle:2.23.19"
+HADOOP_AWS = "org.apache.hadoop:hadoop-aws:3.4.0"
 
 from utils.InventoryTransformations import InventoryTransformations
 from utils.spark_transformations import *
@@ -24,21 +23,26 @@ from utils.spark_schemas import *
 from utils.spark_udfs import *
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input-path', required=True)
+    parser.add_argument('--output-dir', required=True)
+    parser.add_argument('--file-name', required=True)
+    args = parser.parse_args()
 
     spark = (
         SparkSession.builder
         .appName("data_cleansing")
-        .master("spark://localhost:7077")          # driver the notebook
+        .master("spark://spark-master:7077")          # driver the notebook
         .config("spark.driver.bindAddress", "0.0.0.0")
         .config("spark.driver.host", DRIVER_HOST)
         .config("spark.driver.port", DRIVER_PORT)
         .config("spark.blockManager.port", BLOCK_MANAGER_PORT)
         # Including dependencies
         .config("spark.submit.pyFiles", f"{UTILS_PATH}/InventoryTransformations.py")
-        # ↓ Let Spark fetch & ship jars to executors
-        .config("spark.jars.packages", f"{HADOOP_AWS},{AWS_BUNDLE}")
+        # ↓ Let Spark fetch & ship jars to executors (THIS ONLY WORKDS IN NOTEBOOKS)
+        # .config("spark.jars.packages", f"{HADOOP_AWS},{AWS_BUNDLE}")
         # MINIO/S3A
-        .config("spark.hadoop.fs.s3a.endpoint", "http://host.docker.internal:9000")
+        .config("spark.hadoop.fs.s3a.endpoint", "http://minio:9000")
         .config("spark.hadoop.fs.s3a.path.style.access", "true")
         .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
@@ -71,7 +75,7 @@ def main():
         print("->", s.getPath().toString())
 
     # Loading DataFrame
-    df_raw = spark.read.csv("s3a://inventory/inventory_raw.csv", header=True, inferSchema=True)
+    df_raw = spark.read.csv(args.input_path, header=True, inferSchema=True)
 
     # Setting schemas
     traceability_schema = get_traceability_schema()
@@ -112,18 +116,14 @@ def main():
     df = normalization_steps_transform(df)
     df_final = df_final_transform(df)
 
-    # Upload to minIO
-    MINIO_PATH = os.path.join("s3a://", "inventory", "tmp", "01-ingest-and-transform-inventory")
-    FILE_NAME = out_path = os.path.join(MINIO_PATH, f"{dt.today().year}-{dt.today().day}-{dt.today().month}_inventory_tmp")
-
+    # Upload to object store
+    OUTPUT_PATH = os.path.join(args.output_dir, args.file_name)
     (df_final
         .coalesce(1)
         .write
         .mode("overwrite")
         .option("header", True)
-        .csv(FILE_NAME))
-    
-    return FILE_NAME
+        .csv(OUTPUT_PATH))
 
 if __name__ == '__main__':
     main()

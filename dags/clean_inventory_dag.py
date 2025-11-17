@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime as dt
 from airflow import DAG
 from airflow.decorators import task
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
 import pandas as pd
 import shutil
@@ -23,30 +24,41 @@ from utils.anomaly_detector_api_call import call_anomaly_detector
 
 with DAG(
     dag_id="inventory_pipeline",
-    start_date=datetime(2025, 10, 27),
+    start_date=dt(2025, 10, 27),
     schedule_interval="@daily",
     catchup=False,
     default_args={
         "owner": "data-eng",
         "retries": 0,
     },
-    tags=["inventory", "cleaning"],
+    tags=["inventory", "cleaning", "spark-cluster"],
 ) as dag:
-
-    @task()
-    def ingest_and_transform_inventory(execution_date=None):
-        """
-        Run the transform, save {date}_inventory_clean.csv,
-        and return (push via XCom) the file path.
-        """
-        # Use Airflow's logical date for deterministic naming
-        run_date_str = execution_date.strftime("%Y-%m-%d")
-        # inventory_raw.csv path 
-        INPUT_PATH = os.path.join(os.path.dirname(__file__), '..', 'inputs', 'inventory_raw.csv')
-
-        output_path = transform_inventory(INPUT_PATH)
-        
-        return output_path
+    
+    # Upload to minIO
+    INPUT_PATH = os.path.join("s3a://", "inventory", "inventory_raw.csv")
+    TRANSFORM_MINIO_PATH = os.path.join("s3a://", "inventory", "tmp", "01-ingest-and-transform-inventory")
+    FILE_NAME = f"{dt.today().year}-{dt.today().day}-{dt.today().month}_inventory_tmp"
+    
+    spark_clean_inventory = SparkSubmitOperator(
+        task_id="spark_ingest_and_transform_inventory",
+        application=f"{SRC_PATH}/spark_clean_inventory.py",
+        conn_id="spark_connection",
+        java_class=None,
+        total_executor_cores="2",
+        executor_memory="2g",
+        driver_memory="1g",
+        num_executors="1",
+        name="data_cleansing",
+        verbose=True,
+        application_args=[
+            "--input-path", INPUT_PATH,
+            "--output-dir", TRANSFORM_MINIO_PATH,
+            "--file-name", FILE_NAME
+        ],
+        py_files=os.path.join(SRC_PATH, 'utils', 'InventoryTransformations.py'),
+        do_xcom_push=False,
+        packages="software.amazon.awssdk:bundle:2.23.19,org.apache.hadoop:hadoop-aws:3.4.0"
+    )
     
     @task()
     def llm_transform_owner(tmp_csv_path: str):
@@ -70,7 +82,7 @@ with DAG(
         """
 
         OUTPUT_PATH=os.path.join(os.path.dirname(__file__), '..', 'outputs')
-        DESTINATION_PATH = os.path.join(OUTPUT_PATH, f'{clean_file_path.split('/')[-1].split('_')[0]}')
+        DESTINATION_PATH = os.path.join(OUTPUT_PATH, f"{clean_file_path.split('/')[-1].split('_')[0]}")
 
         json_name = call_anomaly_detector(clean_file_path)
         os.makedirs(DESTINATION_PATH, exist_ok=True)
@@ -80,7 +92,7 @@ with DAG(
             return DESTINATION_PATH
         
         # Copying anomalies.json response from tmp directory to outputs/{date} directory
-        shutil.copy(os.path.join(os.path.dirname(__file__), '..', 'tmp', '03-anomaly-detector', 'json_response', f'{json_name}'),
+        shutil.copy(os.path.join(os.path.dirname(__file__), '..', 'tmp', '03-anomaly-detector', 'json_response', f"{json_name}"),
                     os.path.join(DESTINATION_PATH, 'anomalies.json'))
         
         print(f"Successfully extracted anomalies.json, and can now be found in {DESTINATION_PATH}")
@@ -99,7 +111,9 @@ with DAG(
         print(f"Rows in clean inventory: {len(df_clean)}")
 
     # wiring
-    cleaned_path = ingest_and_transform_inventory()
-    llm_transformation_path = llm_transform_owner(cleaned_path)
+    # cleaned_path = ingest_and_transform_inventory()
+    llm_transformation_path = llm_transform_owner(os.path.join(TRANSFORM_MINIO_PATH, FILE_NAME))
     output_dir = detect_anomalies(llm_transformation_path)
-    load_inventory(llm_transformation_path, output_dir)
+    load_task = load_inventory(llm_transformation_path, output_dir)
+
+    spark_clean_inventory >> llm_transformation_path >> output_dir >> load_task
